@@ -1,4 +1,4 @@
-# Online Gambling Platform - Hadoop POC
+# Online Gambling Platform - Hadoop & Kafka  POC
 
 A proof-of-concept implementation of an online gambling platform's data infrastructure using Hadoop ecosystem.
 
@@ -9,28 +9,72 @@ This POC demonstrates how to store, process, and analyze gambling platform data 
 - **Hadoop HDFS** for distributed storage
 - **Hive** for SQL analytics
 - **Spark** for data processing
+- **Kafka** for real-time event streaming
 - **Docker** for easy deployment
 
 ## Project Structure
 
 ```
 gaming_hadoop_poc/
-├── models/                  # Python data models
-│   ├── player.py           # Player accounts
-│   ├── game.py             # Game catalog
-│   ├── bet.py              # Bets/wagers
-│   ├── session.py          # Gaming sessions
-│   ├── transaction.py      # Financial transactions
-│   └── event.py            # Event logging
-├── scripts/                # Utility scripts
-│   ├── hadoop_loader.py    # Load data into Hadoop
-│   ├── start_hadoop.sh     # Start cluster
-│   └── stop_hadoop.sh      # Stop cluster
-├── data/                   # Generated data files
-├── docker-compose.yml      # Hadoop cluster setup
-├── hadoop.env              # Hadoop configuration
-├── hue.ini                 # Hue configuration
-└── main.py                 # Demo script
+├── models/                      # Python data models
+│   ├── __init__.py
+│   ├── player.py               # Player accounts and profiles
+│   ├── game.py                 # Game catalog and metadata
+│   ├── bet.py                  # Bets/wagers with outcomes
+│   ├── session.py              # Gaming sessions tracking
+│   ├── transaction.py          # Financial transactions
+│   └── event.py                # Event logging and analytics
+│
+├── scripts/                     # Utility and operational scripts
+│   ├── check_docker.sh         # Docker daemon status check
+│   ├── create_hive_tables.sql  # Hive DDL statements
+│   ├── hadoop_loader.py        # Load data to HDFS
+│   ├── kafka_producer.py       # Real-time event producer
+│   ├── kafka_consumer.py       # Real-time event consumer
+│   ├── query_hive.py           # Query Hive via Beeline
+│   ├── query_with_spark.py     # Spark-based data analysis
+│   ├── run_tests.sh            # Test suite runner
+│   ├── setup_hive_tables.sh    # Automated Hive setup
+│   ├── start_hadoop.sh         # Start Hadoop cluster
+│   ├── stop_hadoop.sh          # Stop Hadoop cluster
+│   ├── test_hive_connection.py # Hive connectivity test
+│   └── view_data.py            # Local data viewer
+│
+├── tests/                       # Test suite (153 tests)
+│   ├── conftest.py             # Pytest fixtures and config
+│   ├── test_player.py          # Player model tests (11)
+│   ├── test_game.py            # Game model tests (15)
+│   ├── test_bet.py             # Bet model tests (19)
+│   ├── test_session.py         # Session model tests (15)
+│   ├── test_transaction.py     # Transaction model tests (18)
+│   ├── test_event.py           # Event model tests (20)
+│   ├── test_integration.py     # Integration tests (8)
+│   ├── test_kafka_producer.py  # Kafka producer tests (26)
+│   └── test_kafka_consumer.py  # Kafka consumer tests (21)
+│
+├── data/                        # Generated data files (gitignored)
+│   ├── players.json
+│   ├── games.json
+│   ├── bets.json
+│   ├── sessions.json
+│   ├── transactions.json
+│   └── events.json
+│
+├── docs/                        # Documentation
+│   ├── HADOOP_SETUP.md         # Hadoop setup guide
+│   ├── DATA_GENERATION.md      # Data generation docs
+│   ├── HIVE_TROUBLESHOOTING.md # Hive debugging guide
+│   ├── QUICK_START.md          # Quick start guide
+│   └── START_HERE.md           # Project introduction
+│
+├── .gitignore                   # Git ignore patterns
+├── docker-compose.yml           # Multi-container orchestration
+├── hadoop.env                   # Hadoop environment variables
+├── hue.ini                      # Hue web UI configuration
+├── main.py                      # Batch data generator
+├── pytest.ini                   # Pytest configuration
+├── README.md                    # This file
+└── requirements.txt             # Python dependencies
 ```
 
 ## Data Models
@@ -95,7 +139,7 @@ pytest tests/ --cov=models --cov-report=term-missing
 ./scripts/run_tests.sh
 ```
 
-Test suite includes 106 tests covering all 6 data models.
+Test suite includes 153 tests covering all 6 data models and Kafka streaming.
 
 ### 3. Start Hadoop Cluster
 
@@ -174,6 +218,67 @@ docker cp mydata.json namenode:/tmp/
 docker exec namenode hdfs dfs -put /tmp/mydata.json /gambling/events/
 ```
 
+### Real-Time Event Streaming with Kafka
+
+Stream real-time gambling events to Kafka for immediate processing and analytics.
+
+**Kafka Topics:**
+- `gambling-bets` - Real-time betting events (60% of traffic)
+- `gambling-transactions` - Financial transactions (20% of traffic)
+- `gambling-player-activity` - Player activity events (20% of traffic)
+
+**Start Producing Events:**
+
+```bash
+# Stream events at 10 events/second for 60 seconds
+python scripts/kafka_producer.py --duration 60 --rate 10
+
+# High-rate streaming (50 events/second)
+python scripts/kafka_producer.py --duration 300 --rate 50
+```
+
+**Consume Events:**
+
+In a separate terminal:
+
+```bash
+# Consume all events from topics
+python scripts/kafka_consumer.py
+
+# Consume specific number of messages
+python scripts/kafka_consumer.py --max-messages 1000
+
+# Consume from specific topics
+python scripts/kafka_consumer.py --topics gambling-bets
+```
+
+**Real-Time Demo:**
+
+Terminal 1 - Start consumer first:
+```bash
+python scripts/kafka_consumer.py
+```
+
+Terminal 2 - Start producer:
+```bash
+python scripts/kafka_producer.py --duration 60 --rate 20
+```
+
+Watch events flow in real-time! The consumer displays statistics every 10th message.
+
+**Manage Kafka:**
+
+```bash
+# List topics
+docker exec kafka kafka-topics --list --bootstrap-server localhost:9092
+
+# View topic details
+docker exec kafka kafka-topics --describe --topic gambling-bets --bootstrap-server localhost:9092
+
+# Check consumer groups
+docker exec kafka kafka-consumer-groups --list --bootstrap-server localhost:9092
+```
+
 ## Architecture
 
 ### Services
@@ -190,13 +295,23 @@ docker exec namenode hdfs dfs -put /tmp/mydata.json /gambling/events/
 | Spark Master | 8080, 7077 | Spark cluster master |
 | Spark Worker | 8081 | Spark executor |
 | Hue | 8888 | Web UI |
+| Zookeeper | 2181 | Kafka coordination |
+| Kafka | 9092, 9093 | Message broker |
 
 ### Data Flow
 
+**Batch Processing:**
 ```
 Python Models → JSON → HDFS → Hive Tables → SQL Queries
                                ↓
                             Spark Jobs → Analytics
+```
+
+**Real-Time Streaming:**
+```
+Kafka Producer → Kafka Topics → Kafka Consumer → Processing/Analytics
+                      ↓
+                 Spark Streaming (future)
 ```
 
 ## Common Operations
@@ -261,7 +376,7 @@ docker-compose ps
 
 ## Testing
 
-The project includes a comprehensive test suite with 106 tests:
+The project includes a comprehensive test suite with 153 tests:
 
 - **tests/test_player.py** - Player model tests (11 tests)
 - **tests/test_game.py** - Game model tests (15 tests)
@@ -270,6 +385,8 @@ The project includes a comprehensive test suite with 106 tests:
 - **tests/test_transaction.py** - Transaction model tests (18 tests)
 - **tests/test_event.py** - Event model tests (20 tests)
 - **tests/test_integration.py** - Integration tests (8 tests)
+- **tests/test_kafka_producer.py** - Kafka producer tests (26 tests)
+- **tests/test_kafka_consumer.py** - Kafka consumer tests (21 tests)
 
 ### Running Tests
 
@@ -371,7 +488,7 @@ docker exec namenode hdfs dfsadmin -safemode leave
 
 ## Next Steps
 
-- [ ] Implement streaming data ingestion with Kafka
+- [x] Implement streaming data ingestion with Kafka
 - [ ] Add real-time analytics with Spark Streaming
 - [ ] Create scheduled ETL jobs
 - [ ] Build ML models for player behavior

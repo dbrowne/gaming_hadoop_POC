@@ -106,6 +106,9 @@ pyvenv.cfg
 .venv
 pip-selfcheck.json
 
+# Exception: keep our project scripts directory
+!scripts/
+
 ### Example user template template
 ### Example user template
 

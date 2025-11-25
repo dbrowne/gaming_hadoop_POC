@@ -16,6 +16,9 @@ sqlalchemy==2.0.23
 python-dateutil==2.8.2
 pytz==2023.3
 
+# Streaming
+confluent-kafka==2.12.2
+
 # Testing
 pytest==7.4.3
 pytest-cov==4.1.0
