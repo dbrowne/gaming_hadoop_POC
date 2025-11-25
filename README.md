@@ -306,12 +306,9 @@ If you need Hive, see **HIVE_TROUBLESHOOTING.md** for connection setup.
 
 ## Documentation
 
-- **QUICK_START.md** - Start here! Immediate data analysis
 - **HADOOP_SETUP.md** - Detailed Hadoop setup and usage guide
-- **HIVE_TROUBLESHOOTING.md** - Fix Hive connection issues
 - **DATA_GENERATION.md** - Data generation documentation
 - **tests/README.md** - Complete testing documentation
-- **models/** - See docstrings in each model file
 - **docker-compose.yml** - Service configuration
 
 ## Troubleshooting
