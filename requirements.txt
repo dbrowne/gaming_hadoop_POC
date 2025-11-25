@@ -1,0 +1,21 @@
+# Core Python dependencies for Hadoop integration
+
+# Hadoop/HDFS clients
+hdfs==2.7.0
+pyarrow==14.0.1
+pyspark==3.5.0
+
+# Data processing
+pandas==2.1.4
+numpy==1.26.2
+
+# Database
+sqlalchemy==2.0.23
+
+# Utilities
+python-dateutil==2.8.2
+pytz==2023.3
+
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
